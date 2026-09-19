@@ -3,12 +3,26 @@ import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiGet, apiPatch } from "@/lib/api";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { ArrowLeft, Building2, User, CreditCard, Users, Calendar, Clock } from "lucide-react";
+import {
+  ArrowLeft, Building2, User, CreditCard, Users, Calendar, Clock,
+  Mail, Phone, Globe, MapPin, Briefcase, BarChart2,
+} from "lucide-react";
 import { toast } from "sonner";
 import { format } from "date-fns";
+
+interface OrgSettings {
+  name: string;
+  email: string | null;
+  phone: string | null;
+  website: string | null;
+  city: string | null;
+  country: string | null;
+  industry: string | null;
+  employeeRange: string | null;
+  logoUrl: string | null;
+}
 
 interface OrgDetail {
   id: string;
@@ -18,7 +32,9 @@ interface OrgDetail {
   staff: { id: string; name: string; email: string; role: string }[];
   _count: { staff: number; offices: number; employees: number };
   createdAt: string;
+  settings: OrgSettings | null;
 }
+
 interface Plan { id: string; name: string; priceMonthly: number; }
 interface PlanHistoryEntry {
   id: string;
@@ -39,6 +55,19 @@ const STATUS_LABELS: Record<string, string> = {
   pending_payment: "Pending Activation",
   suspended: "Suspended",
 };
+
+function InfoRow({ icon: Icon, label, value }: { icon: React.ElementType; label: string; value?: string | null }) {
+  if (!value) return null;
+  return (
+    <div className="flex items-start gap-3 py-2.5 border-b border-border last:border-0">
+      <div className="flex items-center gap-2 w-40 shrink-0 text-muted-foreground">
+        <Icon className="w-4 h-4 shrink-0" />
+        <span className="text-xs">{label}</span>
+      </div>
+      <span className="text-sm text-foreground break-all">{value}</span>
+    </div>
+  );
+}
 
 export default function OrgDetail() {
   const { id } = useParams<{ id: string }>();
@@ -81,8 +110,11 @@ export default function OrgDetail() {
     <div className="p-6 text-muted-foreground text-sm">Organization not found.</div>
   );
 
+  const owner = org.staff.find(s => s.role === "org_owner");
+  const s = org.settings;
+
   return (
-    <div className="p-6 space-y-6 max-w-3xl">
+    <div className="p-6 space-y-6 max-w-4xl">
       <div className="flex items-center gap-3">
         <Button variant="ghost" size="icon" onClick={() => navigate(-1)}>
           <ArrowLeft className="w-4 h-4" />
@@ -93,12 +125,13 @@ export default function OrgDetail() {
         </div>
       </div>
 
+      {/* Stats */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
         {[
           { label: "Employees", value: org._count.employees, icon: Users },
-          { label: "Branches", value: org._count.offices, icon: Building2 },
-          { label: "Plan", value: org.plan?.name || "—", icon: CreditCard },
-          { label: "Joined", value: format(new Date(org.createdAt), "MMM yyyy"), icon: Calendar },
+          { label: "Branches",  value: org._count.offices,   icon: Building2 },
+          { label: "Plan",      value: org.plan?.name || "—", icon: CreditCard },
+          { label: "Joined",    value: format(new Date(org.createdAt), "MMM yyyy"), icon: Calendar },
         ].map(({ label, value, icon: Icon }) => (
           <Card key={label}>
             <CardContent className="pt-5 pb-4">
@@ -131,21 +164,39 @@ export default function OrgDetail() {
 
       {tab === "overview" && (
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-          {/* Owner info */}
+
+          {/* Company details */}
+          <Card className="sm:col-span-2">
+            <CardHeader>
+              <CardTitle className="text-sm flex items-center gap-2">
+                <Building2 className="w-4 h-4" /> Company Information
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="divide-y divide-border p-0 px-6 pb-2">
+              <InfoRow icon={Building2} label="Company Name"     value={s?.name ?? org.name} />
+              <InfoRow icon={Mail}      label="Company Email"    value={s?.email} />
+              <InfoRow icon={Phone}     label="Phone"            value={s?.phone} />
+              <InfoRow icon={Globe}     label="Website"          value={s?.website} />
+              <InfoRow icon={MapPin}    label="City"             value={s?.city} />
+              <InfoRow icon={MapPin}    label="Country"          value={s?.country} />
+              <InfoRow icon={Briefcase} label="Industry"         value={s?.industry} />
+              <InfoRow icon={BarChart2} label="Employee Range"   value={s?.employeeRange} />
+              {!s && <p className="py-4 text-sm text-muted-foreground">No registration details available.</p>}
+            </CardContent>
+          </Card>
+
+          {/* Owner */}
           <Card>
             <CardHeader>
-              <CardTitle className="text-sm flex items-center gap-2"><User className="w-4 h-4" /> Owner</CardTitle>
+              <CardTitle className="text-sm flex items-center gap-2"><User className="w-4 h-4" /> Owner Account</CardTitle>
             </CardHeader>
             <CardContent className="space-y-2 text-sm">
-              {(() => {
-                const owner = org.staff.find(s => s.role === "org_owner");
-                return owner ? (
-                  <>
-                    <p className="font-medium">{owner.name}</p>
-                    <p className="text-muted-foreground">{owner.email}</p>
-                  </>
-                ) : <p className="text-muted-foreground">No owner assigned</p>;
-              })()}
+              {owner ? (
+                <>
+                  <p className="font-medium">{owner.name}</p>
+                  <p className="text-muted-foreground">{owner.email}</p>
+                </>
+              ) : <p className="text-muted-foreground">No owner assigned</p>}
             </CardContent>
           </Card>
 
@@ -181,7 +232,7 @@ export default function OrgDetail() {
                 </SelectTrigger>
                 <SelectContent>
                   {plansData.map(p => (
-                    <SelectItem key={p.id} value={p.id}>{p.name} — ${p.priceMonthly}/mo</SelectItem>
+                    <SelectItem key={p.id} value={p.id}>{p.name} — Rs {p.priceMonthly}/mo</SelectItem>
                   ))}
                 </SelectContent>
               </Select>
@@ -201,7 +252,7 @@ export default function OrgDetail() {
           <CardContent className="p-0">
             {billingHistory.length === 0 ? (
               <div className="px-6 py-10 text-center text-sm text-muted-foreground">
-                No plan changes recorded yet. History is logged when a plan is assigned via this admin panel.
+                No plan changes recorded yet.
               </div>
             ) : (
               <div className="divide-y divide-border">
@@ -215,7 +266,7 @@ export default function OrgDetail() {
                       </div>
                     </div>
                     <div className="text-right shrink-0">
-                      <p className="text-sm font-semibold">${entry.priceMonthly}/mo</p>
+                      <p className="text-sm font-semibold">Rs {entry.priceMonthly}/mo</p>
                       <p className="text-xs text-muted-foreground">{format(new Date(entry.changedAt), "MMM d, yyyy · HH:mm")}</p>
                     </div>
                   </div>

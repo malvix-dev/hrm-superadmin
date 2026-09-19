@@ -11,7 +11,7 @@ interface Stats {
   overview: {
     totalOrgs: number;
     activeOrgs: number;
-    trialOrgs: number;
+    pendingOrgs: number;
     suspendedOrgs: number;
     mrr: number;
   };
@@ -22,7 +22,7 @@ interface Stats {
 
 const STATUS_COLORS: Record<string, string> = {
   active: "bg-green-100 text-green-700",
-  trial: "bg-yellow-100 text-yellow-700",
+  pending_payment: "bg-yellow-100 text-yellow-700",
   suspended: "bg-red-100 text-red-700",
 };
 
@@ -85,10 +85,10 @@ export default function Dashboard() {
           <CardContent className="pt-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-muted-foreground">Suspended</p>
-                <p className="text-3xl font-bold mt-1 text-red-600">{ov.suspendedOrgs}</p>
+                <p className="text-sm text-muted-foreground">Pending Payment</p>
+                <p className="text-3xl font-bold mt-1 text-yellow-600">{ov.pendingOrgs}</p>
               </div>
-              <AlertCircle className="w-8 h-8 text-red-400 opacity-60" />
+              <AlertCircle className="w-8 h-8 text-yellow-400 opacity-60" />
             </div>
           </CardContent>
         </Card>

@@ -30,8 +30,14 @@ interface PlanHistoryEntry {
 
 const STATUS_COLORS: Record<string, string> = {
   active: "bg-green-100 text-green-700",
-  trial: "bg-yellow-100 text-yellow-700",
+  pending_payment: "bg-yellow-100 text-yellow-700",
   suspended: "bg-red-100 text-red-700",
+};
+
+const STATUS_LABELS: Record<string, string> = {
+  active: "Active",
+  pending_payment: "Pending Activation",
+  suspended: "Suspended",
 };
 
 export default function OrgDetail() {
@@ -150,13 +156,13 @@ export default function OrgDetail() {
             </CardHeader>
             <CardContent className="space-y-3">
               <span className={`text-sm font-medium px-3 py-1 rounded-full ${STATUS_COLORS[org.status] || "bg-muted text-muted-foreground"}`}>
-                {org.status}
+                {STATUS_LABELS[org.status] ?? org.status}
               </span>
               <div className="flex flex-wrap gap-2 pt-2">
-                {["active", "trial", "suspended"].filter(s => s !== org.status).map(s => (
+                {["active", "pending_payment", "suspended"].filter(s => s !== org.status).map(s => (
                   <Button key={s} size="sm" variant="outline" disabled={statusMutation.isPending}
                     onClick={() => statusMutation.mutate(s)}>
-                    Mark {s}
+                    {s === "active" ? "Activate" : s === "suspended" ? "Suspend" : "Set Pending"}
                   </Button>
                 ))}
               </div>
